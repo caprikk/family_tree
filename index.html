@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport" />
+	<title>Document</title>
+	<style>
+		* { margin:0; padding:0;box-sizing: border-box; }
+		a {
+			text-decoration: none;
+		}
+		#demo {
+			position: absolute;
+			left: 50%;
+			top: 0;
+			margin-left: -400px;
+		}
+		.tree {
+			width: 100%;
+			overflow-x: scroll;
+		}
+		.tree-wrapper {
+			position: relative;
+			width: 800px;
+			height: 500px;
+			margin: 100px auto;
+			text-align: center;
+			font-size: 0;
+		}
+		.tree-wrapper div {
+			height: 150px;
+			padding: 40px 0;
+			white-space: nowrap;
+		}
+		.tree-wrapper div:nth-child(2n + 1) {
+			background: #f6fbff;
+		}
+		.tree-wrapper a {
+			display: inline-block;
+			width: 70px;
+			height: 70px;
+			margin:0 10px;
+			font-size: 14px;
+			border-radius: 50%;
+			text-align: center;
+			line-height: 70px;
+			background: #e6e6e6;
+			color: #fff;			
+		}
+		.tree-wrapper a.active{
+			background: #4fb1f8;
+			color: #fff;
+		}
+		.tree-wrapper a.self {
+			background: #fff;
+			color: #4fb1f8;
+			border: 1px solid #4fb1f8;
+		}
+
+	</style>
+</head>
+<body>
+	<div class="tree">
+		<div class="tree-wrapper">
+			<div class="grandparents">
+				<a class="paternal-grandfather active">爷爷</a> <a class="paternal-grandmother active">奶奶</a> <a class="grandfather active">外公</a> <a class="grandmother active">外婆</a> 
+			</div>
+			<div class="parents">
+				<a class="father active">父亲</a> <a class="mother active">母亲</a>
+			</div>
+			<div class="siblings">
+				<a class="partner">+</a>
+				<a class="self item">我</a>
+				<a class="item active">弟弟</a>
+				<a class="item active">妹妹</a>
+				<a class="item active">妹妹</a>
+				<a class="item">+</a>
+			</div>
+			<div class="children">
+				<a class="item active">儿子</a>
+				<a class="item active">女儿</a>
+				<a class="item">+</a>
+			</div>
+			<canvas id="demo" width="1600" height="1200" style="width: 800px;height: 600px;"></canvas>
+		</div>
+	</div>
+	
+	
+	<script type="text/javascript" src="jquery.2.js"></script>
+	<script type="text/javascript">
+		$(function ()
+		{
+			family_tree();
+
+			function family_tree()
+			{
+				responvise();
+				
+				var canvas = document.getElementById('demo'),
+					ctx = canvas.getContext("2d"),
+					ball_width = 70, 
+					ball_height = 70, 
+					ball_margin = 10, 
+					scale = 2;
+
+				ctx.strokeStyle = '#cccccc';
+				drawGrandparents();
+				drawParents();
+				drawPartner();
+				drawSilblings();
+				drawChildren();
+
+				function responvise()
+				{
+					if ($(window).width() < 768) 
+					{
+						var width = $(window).width(),
+							siblings_width = $('.siblings a').length * 90;
+
+						if (siblings_width > width)
+						{
+							$('.tree-wrapper').css('width', siblings_width);
+							$('#demo').attr('width', siblings_width * 2);
+							$('#demo').css({
+								width: siblings_width,
+								marginLeft: - (siblings_width / 2)
+							});
+						}
+						else
+						{
+							$('.tree-wrapper').css('width', width);
+							$('#demo').attr('width', width * 2);
+							$('#demo').css({
+								width: width,
+								marginLeft: - (width / 2)
+							});
+						}
+					}
+				}
+				
+				function drawGrandparents() 
+				{
+					var position = [];
+
+					$.each($('.tree-wrapper .grandparents a'), function (i, e)
+					{
+						var left = $(this).position().left,
+							top = $(this).position().top,
+							width = $(this).width(),
+							height = $(this).height();
+
+						position.push({
+							x: left + ball_margin,
+							y: top
+						});
+					});
+
+					_draw();
+
+					drawBetweenNodes($('.paternal-grandfather'), $('.paternal-grandmother'), $('.father'));
+					drawBetweenNodes($('.grandfather'), $('.grandmother'), $('.mother'));
+
+					function _draw()
+					{
+						position[0].x = position[0].x + ball_width;
+						position[2].x = position[2].x + ball_width;
+
+						for (var i = 0; i < position.length; i++)
+						{
+							position[i].y = position[i].y + ball_height / 2;
+						}
+						
+						// 横线
+						for (var i = 0; i < position.length; i += 2)
+						{
+							ctx.moveTo(position[i].x * scale, position[i].y * scale);
+							ctx.lineTo(position[i + 1].x * scale, position[i + 1].y * scale);
+							ctx.stroke();
+						}
+					}
+				}
+
+				function drawPartner()
+				{
+					var self = $('.self').position(),
+						partner = $('.partner').position();
+
+					ctx.moveTo((partner.left + ball_width + ball_margin) * scale, (partner.top + ball_height / 2) * scale);
+					ctx.lineTo((self.left + ball_margin) * scale, (partner.top + ball_height / 2) * scale);
+					ctx.stroke();
+				}
+
+				function drawParents() 
+				{
+					var position = [];
+					$.each($('.tree-wrapper .parents a'), function (i, e)
+					{
+						var left = $(this).position().left,
+							top = $(this).position().top,
+							width = $(this).width(),
+							height = $(this).height();
+
+						position.push({
+							x: left + ball_margin,
+							y: top
+						});
+					});
+
+					_draw();
+
+					function _draw()
+					{
+						position[0].x = position[0].x + ball_width;
+
+						for (var i = 0; i < position.length; i++)
+						{
+							position[i].y = position[i].y + ball_height / 2;
+						}
+						
+						// 横线
+						for (var i = 0; i < position.length; i += 2)
+						{
+							ctx.moveTo(position[i].x * 2, position[i].y * 2);
+							ctx.lineTo(position[i + 1].x * 2, position[i + 1].y * 2);
+							ctx.stroke();
+						}
+					}
+				}
+
+				function drawSilblings(topPoint, bottomPoint)
+				{
+					var length = $('.siblings .item').length;
+
+					if (length)
+					{
+						var topPoint = calMiddleNodes($('.father'), $('.mother')),
+							bottomPoint = {
+								x: topPoint.x,
+								y: $('.self').position().top
+							},
+							first_siblings = $('.siblings .item').eq(0).position(),
+							last_siblings = $('.siblings .item').eq(length - 1).position(),
+							y = bottomPoint.y - (bottomPoint.y - topPoint.y) / 3;
+
+						// 父母竖线
+						ctx.moveTo(topPoint.x * scale, topPoint.y * scale);
+						ctx.lineTo(topPoint.x * scale, y * scale);
+						ctx.stroke();
+
+						// 左横线
+						ctx.moveTo(topPoint.x * scale, y * scale);
+						ctx.lineTo((first_siblings.left + ball_width / 2 + ball_margin) * scale, y * scale);
+						ctx.stroke();
+
+						// 右横线
+						ctx.moveTo(topPoint.x * scale, y * scale);
+						ctx.lineTo((last_siblings.left + ball_width / 2 + ball_margin) * scale, y * scale);
+						ctx.stroke();
+
+						// 兄弟竖线
+						$.each($('.siblings .item'), function (i, e)
+						{
+							var position = $(this).position();
+							ctx.moveTo((position.left + ball_margin + ball_width / 2) * scale, y * scale);
+							ctx.lineTo((position.left + ball_margin + ball_width / 2) * scale, (position.top) * scale);
+							ctx.stroke();
+						});
+					}
+				}
+
+				function drawChildren()
+				{
+					var length = $('.children .item').length;
+
+					if (length)
+					{
+						var middle_node_position = calMiddleNodes($('.partner'), $('.self'));
+						var last_children = $('.children .item').eq(length - 1).position(),
+							y = last_children.top - (last_children.top - middle_node_position.y) / 3;
+
+						// 我与伴侣的竖线
+						ctx.moveTo(middle_node_position.x * scale, middle_node_position.y * scale);
+						ctx.lineTo(middle_node_position.x * scale, y * scale);
+						ctx.stroke();
+
+						ctx.moveTo(middle_node_position.x * scale, y * scale);
+						ctx.lineTo((last_children.left + ball_width / 2 + ball_margin) * scale, y * scale);
+						ctx.stroke();
+
+						// 儿女竖线
+						$.each($('.children .item'), function (i, e)
+						{
+							var position = $(this).position();
+							ctx.moveTo((position.left + ball_margin + ball_width / 2) * scale, y * scale);
+							ctx.lineTo((position.left + ball_margin + ball_width / 2) * scale, (position.top) * scale);
+							ctx.stroke();
+						});
+					}
+
+
+					// 响应式
+					if ($(window).width() < 768) 
+					{
+						$('.tree')[0].scrollLeft = (parseInt($('.tree-wrapper').width()) - parseInt($(window).width())) / 2;
+					}
+				}
+
+				// 画parents级的横竖线
+				function drawBetweenNodes(left, right, generation) 
+				{
+					var left_position = left.position(),
+						right_position = right.position(),
+						generation_position = generation.position(),
+						middle_node_position = calMiddleNodes(left, right),
+						y = generation_position.top - (generation_position.top - middle_node_position.y) / 3;
+
+					// 竖线
+					ctx.moveTo(middle_node_position.x * scale, middle_node_position.y * scale);
+					ctx.lineTo(middle_node_position.x * scale, y * scale);
+					ctx.stroke();
+
+					// 横线
+					ctx.moveTo(middle_node_position.x * scale, y * scale);
+					ctx.lineTo((generation_position.left + ball_margin + ball_width / 2) * scale, y * scale);
+					ctx.stroke();
+
+					// 竖线
+					ctx.moveTo((generation_position.left + ball_margin + ball_width / 2) * scale, y * scale);
+					ctx.lineTo((generation_position.left + ball_margin + ball_width / 2) * scale, generation_position.top * scale);
+					ctx.stroke();
+				}
+
+				// 计算两点中间的距离
+				function calMiddleNodes(left, right)
+				{
+					var left_position = left.position(),
+						right_position = right.position();
+
+					return {
+						x: left_position.left + ball_margin + ball_width + ball_margin,
+						y: left_position.top + ball_height / 2
+					}
+				}
+			}
+		});
+	</script>
+</body>
+</html>
